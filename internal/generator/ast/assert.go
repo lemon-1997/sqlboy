@@ -1,4 +1,4 @@
-package generate
+package ast
 
 import (
 	"go/ast"
