@@ -1,15 +1,36 @@
 package parser
 
 type ColumnDecl struct {
-	RawText    string
-	ColumnName string
-	GoType     GoType
+	Decl    string
+	Name    string
+	Comment string
+	SqlType string
+	GoType  GoType
+}
+
+func (c *ColumnDecl) SetDecl(decl string) {
+	c.Decl = decl
+}
+
+func (c *ColumnDecl) SetName(name string) {
+	c.Name = name
+}
+
+func (c *ColumnDecl) SetComment(comment string) {
+	c.Comment = comment
+}
+
+func (c *ColumnDecl) SetGoType(gType GoType) {
+	c.GoType = gType
+}
+
+func (c *ColumnDecl) SetSqlType(sType string) {
+	c.SqlType = sType
 }
 
 type StmtListener struct {
 	*BaseStmtParserListener
-	walkDecl   string
-	walkColumn string
+	column ColumnDecl
 
 	TableName string
 	Columns   []ColumnDecl
@@ -43,17 +64,30 @@ func (l *StmtListener) EnterTableName(ctx *TableNameContext) {
 
 // EnterColumnDeclaration remove quote
 func (l *StmtListener) EnterColumnDeclaration(ctx *ColumnDeclarationContext) {
+	l.column = ColumnDecl{}
 	switch ctx.Uid().GetStop().GetTokenType() {
 	case StmtParserREVERSE_QUOTE_ID, StmtParserCHARSET_REVERSE_QOUTE_STRING, StmtParserSTRING_LITERAL:
 		column := ctx.Uid().GetText()
 		if len(column) <= 2 {
 			return
 		}
-		l.walkColumn = column[1 : len(column)-1]
+		l.column.SetName(column[1 : len(column)-1])
 	default:
-		l.walkColumn = ctx.Uid().GetText()
+		l.column.SetName(ctx.Uid().GetText())
 	}
-	l.walkDecl = ctx.GetText()
+	start := ctx.GetStart().GetStart()
+	stop := ctx.GetStop().GetStop()
+	l.column.SetDecl(ctx.GetStart().GetInputStream().GetText(start, stop))
+}
+
+func (l *StmtListener) ExitColumnDeclaration(ctx *ColumnDeclarationContext) {
+	l.Columns = append(l.Columns, l.column)
+}
+
+func (l *StmtListener) EnterColumnDefinition(ctx *ColumnDefinitionContext) {
+	start := ctx.DataType().GetStart().GetStart()
+	stop := ctx.DataType().GetStop().GetStop()
+	l.column.SetSqlType(ctx.GetStart().GetInputStream().GetText(start, stop))
 }
 
 // EnterIntegerDataType
@@ -85,7 +119,7 @@ func (l *StmtListener) EnterIntegerDataType(ctx *IntegerDataTypeContext) {
 	default:
 		goType = Invalid
 	}
-	l.Columns = append(l.Columns, l.TransColumnDecl(goType))
+	l.column.SetGoType(goType)
 }
 
 // EnterFloatDataType
@@ -95,49 +129,49 @@ func (l *StmtListener) EnterIntegerDataType(ctx *IntegerDataTypeContext) {
 func (l *StmtListener) EnterFloatDataType(ctx *FloatDataTypeContext) {
 	switch ctx.GetStart().GetTokenType() {
 	case StmtParserFLOAT, StmtParserFLOAT4:
-		l.Columns = append(l.Columns, l.TransColumnDecl(Float32))
+		l.column.SetGoType(Float32)
 	default:
-		l.Columns = append(l.Columns, l.TransColumnDecl(Float64))
+		l.column.SetGoType(Float64)
 	}
 }
 
 func (l *StmtListener) EnterTimeDataType(ctx *TimeDataTypeContext) {
-	l.Columns = append(l.Columns, l.TransColumnDecl(Time))
+	l.column.SetGoType(Time)
 }
 
 func (l *StmtListener) EnterStringDataType(ctx *StringDataTypeContext) {
-	l.Columns = append(l.Columns, l.TransColumnDecl(String))
+	l.column.SetGoType(String)
 }
 
 func (l *StmtListener) EnterBinaryDataType(ctx *BinaryDataTypeContext) {
-	l.Columns = append(l.Columns, l.TransColumnDecl(SliceByte))
+	l.column.SetGoType(SliceByte)
 }
 
 func (l *StmtListener) EnterSpecialDataType(ctx *SpecialDataTypeContext) {
 	switch ctx.GetStart().GetTokenType() {
 	case StmtParserBOOL, StmtParserBOOLEAN:
-		l.Columns = append(l.Columns, l.TransColumnDecl(Bool))
+		l.column.SetGoType(Bool)
 	case StmtParserSERIAL:
 		// SERIAL is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
-		l.Columns = append(l.Columns, l.TransColumnDecl(Uint64))
+		l.column.SetGoType(Uint64)
 	case StmtParserBIT:
-		l.Columns = append(l.Columns, l.TransColumnDecl(SliceUint8))
+		l.column.SetGoType(SliceUint8)
 	case StmtParserYEAR:
 		// MySQL displays YEAR values in YYYY format, with a range of 1901 to 2155, and 0000.
-		l.Columns = append(l.Columns, l.TransColumnDecl(Uint16))
+		l.column.SetGoType(Uint16)
 	default:
-		l.Columns = append(l.Columns, l.TransColumnDecl(Invalid))
+		l.column.SetGoType(Invalid)
 	}
 }
 
 func (l *StmtListener) EnterSpatialDataType(ctx *SpatialDataTypeContext) {
-	l.Columns = append(l.Columns, l.TransColumnDecl(Invalid))
+	l.column.SetGoType(Invalid)
 }
 
-func (l *StmtListener) TransColumnDecl(t GoType) ColumnDecl {
-	return ColumnDecl{
-		RawText:    l.walkDecl,
-		ColumnName: l.walkColumn,
-		GoType:     t,
+func (l *StmtListener) EnterCommentColumnConstraint(ctx *CommentColumnConstraintContext) {
+	comment := ctx.STRING_LITERAL().GetText()
+	if len(comment) <= 2 {
+		return
 	}
+	l.column.SetComment(comment[1 : len(comment)-1])
 }
