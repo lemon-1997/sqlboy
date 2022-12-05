@@ -5,7 +5,6 @@ import (
 	parser "sqlboy/antrl"
 )
 
-// ColumnDecl 还需要注意特殊列名不能作为结构体idName 去掉特殊符号idName重复？
 func parseStmt(ddl string) (tableName string, columnDecls []parser.ColumnDecl, errors []error) {
 	input := antlr.NewInputStream(ddl)
 	lexer := parser.NewStmtLexer(input)

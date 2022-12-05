@@ -1,25 +1,25 @@
 package parser
 
-type GoType int
+type GoType string
 
 const (
-	Invalid GoType = iota
+	Invalid = "invalid"
 
-	Bool
-	Int8
-	Int16
-	Int32
-	Int64
-	Uint8
-	Uint16
-	Uint32
-	Uint64
+	Bool   = "bool"
+	Int8   = "int8"
+	Int16  = "int16"
+	Int32  = "int32"
+	Int64  = "int64"
+	Uint8  = "uint8"
+	Uint16 = "uint16"
+	Uint32 = "uint32"
+	Uint64 = "uint64"
 
-	Float32
-	Float64
+	Float32 = "float32"
+	Float64 = "float64"
 
-	String
-	Time
-	SliceByte
-	SliceUint8
+	String     = "string"
+	Time       = "time.Time"
+	SliceByte  = "[]byte"
+	SliceUint8 = "[]uint8"
 )
