@@ -1,5 +1,7 @@
 package parser
 
+import "github.com/antlr/antlr4/runtime/Go/antlr/v4"
+
 type ColumnDecl struct {
 	Decl    string
 	Name    string
@@ -28,12 +30,22 @@ func (c *ColumnDecl) SetSqlType(sType string) {
 	c.SqlType = sType
 }
 
+type ColumnIndex struct {
+	Decl    string
+	Columns []ColumnDecl
+}
+
+type TableAttr struct {
+	TableName  string
+	Columns    []ColumnDecl
+	PrimaryKey ColumnIndex
+	UniqueKeys []ColumnIndex
+}
+
 type StmtListener struct {
 	*BaseStmtParserListener
 	column ColumnDecl
-
-	TableName string
-	Columns   []ColumnDecl
+	TableAttr
 }
 
 func NewStmtListener() *StmtListener {
@@ -62,22 +74,12 @@ func (l *StmtListener) EnterTableName(ctx *TableNameContext) {
 	l.TableName = tableName
 }
 
-// EnterColumnDeclaration remove quote
 func (l *StmtListener) EnterColumnDeclaration(ctx *ColumnDeclarationContext) {
+	columnName := l.removeColumnQuote(ctx.Uid().GetStart())
+	decl := l.getTextFromTokens(ctx.GetStart(), ctx.GetStop())
 	l.column = ColumnDecl{}
-	switch ctx.Uid().GetStop().GetTokenType() {
-	case StmtParserREVERSE_QUOTE_ID, StmtParserCHARSET_REVERSE_QOUTE_STRING, StmtParserSTRING_LITERAL:
-		column := ctx.Uid().GetText()
-		if len(column) <= 2 {
-			return
-		}
-		l.column.SetName(column[1 : len(column)-1])
-	default:
-		l.column.SetName(ctx.Uid().GetText())
-	}
-	start := ctx.GetStart().GetStart()
-	stop := ctx.GetStop().GetStop()
-	l.column.SetDecl(ctx.GetStart().GetInputStream().GetText(start, stop))
+	l.column.SetName(columnName)
+	l.column.SetDecl(decl)
 }
 
 func (l *StmtListener) ExitColumnDeclaration(ctx *ColumnDeclarationContext) {
@@ -174,4 +176,81 @@ func (l *StmtListener) EnterCommentColumnConstraint(ctx *CommentColumnConstraint
 		return
 	}
 	l.column.SetComment(comment[1 : len(comment)-1])
+}
+
+func (l *StmtListener) EnterPrimaryKeyColumnConstraint(ctx *PrimaryKeyColumnConstraintContext) {
+	l.PrimaryKey = ColumnIndex{
+		Decl:    l.column.Decl,
+		Columns: []ColumnDecl{l.column},
+	}
+}
+
+func (l *StmtListener) EnterUniqueKeyColumnConstraint(ctx *UniqueKeyColumnConstraintContext) {
+	l.UniqueKeys = append(l.UniqueKeys, ColumnIndex{
+		Decl:    l.column.Decl,
+		Columns: []ColumnDecl{l.column},
+	})
+}
+
+func (l *StmtListener) EnterPrimaryKeyTableConstraint(ctx *PrimaryKeyTableConstraintContext) {
+	var keys []string
+	for _, indexCtx := range ctx.IndexColumnNames().GetChildren() {
+		columnCtx, ok := indexCtx.(*IndexColumnNameContext)
+		if !ok {
+			continue
+		}
+		columnName := l.removeColumnQuote(columnCtx.GetStart())
+		keys = append(keys, columnName)
+	}
+	l.PrimaryKey.Decl = l.getTextFromTokens(ctx.GetStart(), ctx.GetStop())
+	for _, columnName := range keys {
+		for _, item := range l.Columns {
+			if item.Name == columnName {
+				l.PrimaryKey.Columns = append(l.PrimaryKey.Columns, item)
+				break
+			}
+		}
+	}
+}
+
+func (l *StmtListener) EnterUniqueKeyTableConstraint(ctx *UniqueKeyTableConstraintContext) {
+	var keys []string
+	for _, indexCtx := range ctx.IndexColumnNames().GetChildren() {
+		columnCtx, ok := indexCtx.(*IndexColumnNameContext)
+		if !ok {
+			continue
+		}
+		columnName := l.removeColumnQuote(columnCtx.GetStart())
+		keys = append(keys, columnName)
+	}
+	var uniqueIndex ColumnIndex
+	uniqueIndex.Decl = l.getTextFromTokens(ctx.GetStart(), ctx.GetStop())
+	for _, columnName := range keys {
+		for _, item := range l.Columns {
+			if item.Name == columnName {
+				uniqueIndex.Columns = append(uniqueIndex.Columns, item)
+				break
+			}
+		}
+	}
+	l.UniqueKeys = append(l.UniqueKeys, uniqueIndex)
+}
+
+func (l *StmtListener) getTextFromTokens(start, end antlr.Token) string {
+	return start.GetInputStream().GetText(start.GetStart(), end.GetStop())
+}
+
+func (l *StmtListener) removeColumnQuote(column antlr.Token) string {
+	var res string
+	switch column.GetTokenType() {
+	case StmtParserREVERSE_QUOTE_ID, StmtParserCHARSET_REVERSE_QOUTE_STRING, StmtParserSTRING_LITERAL:
+		name := column.GetText()
+		if len(name) <= 2 {
+			return ""
+		}
+		res = name[1 : len(name)-1]
+	default:
+		res = column.GetText()
+	}
+	return res
 }

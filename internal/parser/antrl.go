@@ -5,7 +5,7 @@ import (
 	parser "sqlboy/antrl"
 )
 
-func parseStmt(ddl string) (tableName string, columnDecls []parser.ColumnDecl, errors []error) {
+func parseStmt(ddl string) (parser.TableAttr, []error) {
 	input := antlr.NewInputStream(ddl)
 	lexer := parser.NewStmtLexer(input)
 	stream := antlr.NewCommonTokenStream(lexer, 0)
@@ -19,10 +19,10 @@ func parseStmt(ddl string) (tableName string, columnDecls []parser.ColumnDecl, e
 	tree := p.Prog()
 
 	if el.HasError() {
-		return "", nil, el.Errors()
+		return parser.TableAttr{}, el.Errors()
 	}
 
 	l := parser.NewStmtListener()
 	antlr.ParseTreeWalkerDefault.Walk(l, tree)
-	return l.TableName, l.Columns, nil
+	return l.TableAttr, nil
 }
