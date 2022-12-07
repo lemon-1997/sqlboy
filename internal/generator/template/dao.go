@@ -1,6 +1,6 @@
 package template
 
-const DaoGorm = `package {{.Package}}
+const DaoGorm = `package {{.}}
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func (d *Dao) DB(ctx context.Context) *gorm.DB {
 }
 `
 
-const DaoSqlx = `package {{.Package}}
+const DaoSqlx = `package {{.}}
 
 import (
 	"context"

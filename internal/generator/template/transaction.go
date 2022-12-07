@@ -1,6 +1,6 @@
 package template
 
-const TransactionGorm = `package {{.Package}}
+const TransactionGorm = `package {{.}}
 
 import "context"
 
@@ -13,7 +13,7 @@ func NewTransaction(d *Dao) Transaction {
 }
 `
 
-const TransactionSqlx = `package {{.Package}}
+const TransactionSqlx = `package {{.}}
 
 import (
 	"context"

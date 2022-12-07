@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	parser "sqlboy/antrl"
+	"sqlboy/internal/generator"
 	"strings"
 )
 
@@ -42,7 +43,7 @@ func buildModel(packageName string, tables map[string][]parser.ColumnDecl, tags 
 				comment = append(comment, &ast.Comment{Text: fmt.Sprintf(" //%s", item.Comment)})
 			}
 			fields = append(fields, &ast.Field{
-				Names: []*ast.Ident{ast.NewIdent(camelCase(item.Name))},
+				Names: []*ast.Ident{ast.NewIdent(generator.CamelCase(item.Name, true))},
 				Type:  ast.NewIdent(string(item.GoType)),
 				Tag: &ast.BasicLit{
 					Kind:  token.STRING,
@@ -53,10 +54,10 @@ func buildModel(packageName string, tables map[string][]parser.ColumnDecl, tags 
 		}
 		genDecl := &ast.GenDecl{
 			Tok:   token.TYPE,
-			Specs: []ast.Spec{&ast.TypeSpec{Name: ast.NewIdent(camelCase(name)), Type: &ast.StructType{Fields: &ast.FieldList{List: fields}}}},
+			Specs: []ast.Spec{&ast.TypeSpec{Name: ast.NewIdent(generator.CamelCase(name, true)), Type: &ast.StructType{Fields: &ast.FieldList{List: fields}}}},
 		}
 		funcDecl := &ast.FuncDecl{
-			Recv: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: ast.NewIdent(camelCase(name))}}}},
+			Recv: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: ast.NewIdent(generator.CamelCase(name, true))}}}},
 			Name: ast.NewIdent("TableName"),
 			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("string")}}}},
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("`%s`", name)}}}}},
@@ -70,30 +71,4 @@ func buildModel(packageName string, tables map[string][]parser.ColumnDecl, tags 
 		}}, decls...)
 	}
 	return &ast.File{Name: ast.NewIdent(packageName), Decls: decls}
-}
-
-func camelCase(name string) string {
-	upper := true
-	var b strings.Builder
-	//b.Grow(len(s))
-	for i := 0; i < len(name); i++ {
-		c := name[i]
-		if !isValid(c) {
-			upper = true
-			continue
-		}
-		if upper && 'a' <= c && c <= 'z' {
-			c -= 'a' - 'A'
-			upper = false
-		}
-		b.WriteByte(c)
-	}
-	return b.String()
-}
-
-func isValid(r uint8) bool {
-	if ('a' <= r && r <= 'z') || ('A' <= r && r <= 'Z') || ('0' <= r && r <= '9') {
-		return true
-	}
-	return false
 }
