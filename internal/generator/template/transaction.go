@@ -29,9 +29,9 @@ func NewTransaction(d *Dao) Transaction {
 }
 
 type DbTx interface {
-	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
-	PrepareContext(context.Context, string) (*sql.Stmt, error)
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
-	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
+	QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row
+	QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error)
+	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 `
