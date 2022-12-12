@@ -1,12 +1,20 @@
 package template
 
-const queryCommon = `
-{{- $tableExport := caseExport .Table -}}
-{{- $tableInternal := caseInternal .Table -}}
-
+const keyParamsGorm = `
 {{- define "keyParams" -}}
 {{range .}}, {{caseInternal .Name}} {{.Type}}{{end}}
 {{- end -}}
+`
+
+const keyParamsSqlx = `
+{{- define "keyParams" -}}
+{{range .}}, {{caseInternal .Name}} {{sqlxType .}}{{end}}
+{{- end -}}
+`
+
+const commonQuery = `
+{{- $tableExport := caseExport .Table -}}
+{{- $tableInternal := caseInternal .Table -}}
 
 {{- define "keyFunSign" -}} 
 {{range .}}{{caseExport .Name}}{{end}} 
@@ -48,7 +56,7 @@ func New{{$tableExport}}Dao(dao *Dao) {{$tableExport}}Dao {
 }
 `
 
-const QueryGorm = queryCommon + `
+const QueryGorm = keyParamsGorm + commonQuery + `
 func (d *{{$tableExport}}Impl) Create{{$tableExport}}(ctx context.Context, {{$tableInternal}} *{{$tableExport}}) error {
 	return d.dao.DB(ctx).Create({{$tableInternal}}).Error
 }
@@ -59,6 +67,7 @@ func (d *{{$tableExport}}Impl) BatchCreate{{$tableExport}}(ctx context.Context, 
 
 {{- if len .PrimaryKey}}
 {{- $primaryQuery := whereQuery .PrimaryKey}}
+
 func (d *{{$tableExport}}Impl) Find{{$tableExport}}(ctx context.Context{{template "keyParams" .PrimaryKey}}) (*{{$tableExport}}, error){
 	var {{$tableInternal}} {{$tableExport}}
 	if err := d.dao.DB(ctx).Where("{{$primaryQuery}}"{{template "whereValues" .PrimaryKey}}).First(&{{$tableInternal}}).Error; err != nil {
@@ -80,6 +89,7 @@ func (d *{{$tableExport}}Impl) Delete{{$tableExport}}(ctx context.Context{{templ
 
 {{- range .UniqueKeys}}
 {{- $uniqueQuery := whereQuery .}}
+
 func (d *{{$tableExport}}Impl) FindBy{{template "keyFunSign" .}}(ctx context.Context{{template "keyParams" .}}) (*{{$tableExport}}, error){
 	var {{$tableInternal}} {{$tableExport}}
 	if err := d.dao.DB(ctx).Where("{{$uniqueQuery}}"{{template "whereValues" .}}).First(&{{$tableInternal}}).Error; err != nil {
@@ -99,7 +109,7 @@ func (d *{{$tableExport}}Impl) DeleteBy{{template "keyFunSign" .}}(ctx context.C
 {{- end}}
 `
 
-const QuerySqlx = queryCommon + `
+const QuerySqlx = keyParamsSqlx + commonQuery + `
 {{- $tableQuote := addQuote .Table -}}
 {{- $columnsQuote := joinQuote .Columns -}}
 {{- $columnsPlace := joinPlace .Columns}}

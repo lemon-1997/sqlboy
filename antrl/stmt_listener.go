@@ -3,11 +3,12 @@ package parser
 import "github.com/antlr/antlr4/runtime/Go/antlr/v4"
 
 type ColumnDecl struct {
-	Decl    string
-	Name    string
-	Comment string
-	SqlType string
-	GoType  GoType
+	Decl      string
+	Name      string
+	Comment   string
+	SqlType   string
+	GoType    GoType
+	IsNotNull bool
 }
 
 func (c *ColumnDecl) SetDecl(decl string) {
@@ -28,6 +29,10 @@ func (c *ColumnDecl) SetGoType(gType GoType) {
 
 func (c *ColumnDecl) SetSqlType(sType string) {
 	c.SqlType = sType
+}
+
+func (c *ColumnDecl) SetIsNotNull(isNotNull bool) {
+	c.IsNotNull = isNotNull
 }
 
 type ColumnIndex struct {
@@ -90,6 +95,12 @@ func (l *StmtListener) EnterColumnDefinition(ctx *ColumnDefinitionContext) {
 	start := ctx.DataType().GetStart().GetStart()
 	stop := ctx.DataType().GetStop().GetStop()
 	l.column.SetSqlType(ctx.GetStart().GetInputStream().GetText(start, stop))
+}
+
+func (l *StmtListener) EnterNullColumnConstraint(ctx *NullColumnConstraintContext) {
+	if ctx.GetStart().GetTokenType() == StmtParserNOT {
+		l.column.SetIsNotNull(true)
+	}
 }
 
 // EnterIntegerDataType

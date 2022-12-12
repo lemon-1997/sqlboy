@@ -9,17 +9,9 @@ import (
 	"strings"
 )
 
-type Tag int8
-
-const (
-	Gorm Tag = iota
-	SqlX
-	JSON
-)
-
 // Todo 重复列名 表名 invalid类型 错误返回(这个后面优化代码会做，目前先实现，怎么简单怎么来)
-func buildModel(packageName string, tables map[string][]parser.ColumnDecl, tags []Tag) *ast.File {
-	var importTime bool
+func buildModel(packageName string, tables map[string][]parser.ColumnDecl, mode generator.Mode) *ast.File {
+	var importTime, importSqlx bool
 	var decls []ast.Decl
 	for name, columns := range tables {
 		fields := make([]*ast.Field, 0)
@@ -27,24 +19,32 @@ func buildModel(packageName string, tables map[string][]parser.ColumnDecl, tags 
 			if item.GoType == parser.Time {
 				importTime = true
 			}
+
 			var tagVales []string
-			for _, t := range tags {
-				switch t {
-				case Gorm:
-					tagVales = append(tagVales, fmt.Sprintf(`gorm:"column:%s"`, item.Name))
-				case SqlX:
-					tagVales = append(tagVales, fmt.Sprintf(`db:"%s"`, item.Name))
-				case JSON:
-					tagVales = append(tagVales, fmt.Sprintf(`json:"%s"`, item.Name))
-				}
+			switch mode {
+			case generator.ModeGorm:
+				tagVales = append(tagVales, fmt.Sprintf(`gorm:"column:%s"`, item.Name))
+			case generator.ModeSqlx:
+				tagVales = append(tagVales, fmt.Sprintf(`db:"%s"`, item.Name))
+			default:
+				// err ?
+				tagVales = append(tagVales, fmt.Sprintf(`gorm:"column:%s"`, item.Name))
 			}
+			tagVales = append(tagVales, fmt.Sprintf(`json:"%s"`, item.Name))
+
 			var comment []*ast.Comment
 			if item.Comment != "" {
 				comment = append(comment, &ast.Comment{Text: fmt.Sprintf(" //%s", item.Comment)})
 			}
+
+			fieldType := string(item.GoType)
+			if mode == generator.ModeSqlx && !item.IsNotNull {
+				importSqlx = true
+				fieldType = generator.ToSqlNullType(string(item.GoType))
+			}
 			fields = append(fields, &ast.Field{
 				Names: []*ast.Ident{ast.NewIdent(generator.CamelCase(item.Name, true))},
-				Type:  ast.NewIdent(string(item.GoType)),
+				Type:  ast.NewIdent(fieldType),
 				Tag: &ast.BasicLit{
 					Kind:  token.STRING,
 					Value: fmt.Sprintf("`%s`", strings.Join(tagVales, " ")),
@@ -64,11 +64,15 @@ func buildModel(packageName string, tables map[string][]parser.ColumnDecl, tags 
 		}
 		decls = append(decls, genDecl, funcDecl)
 	}
-	if importTime {
-		decls = append([]ast.Decl{&ast.GenDecl{
-			Tok:   token.IMPORT,
-			Specs: []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"time"`}}},
-		}}, decls...)
+	if importTime || importSqlx {
+		var specs []ast.Spec
+		if importTime {
+			specs = append(specs, &ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"time"`}})
+		}
+		if importSqlx {
+			specs = append(specs, &ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"database/sql"`}})
+		}
+		decls = append([]ast.Decl{&ast.GenDecl{Tok: token.IMPORT, Specs: specs}}, decls...)
 	}
 	return &ast.File{Name: ast.NewIdent(packageName), Decls: decls}
 }

@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"sqlboy/internal/generator"
 	"sqlboy/internal/generator/template"
 	"testing"
 )
@@ -21,8 +22,8 @@ func Test_render(t *testing.T) {
 }
 
 func Test_renderQuery(t *testing.T) {
-	tests := []string{
-		template.QueryGorm, template.QuerySqlx,
+	tests := []generator.Mode{
+		generator.ModeGorm, generator.ModeSqlx,
 	}
 	data := renderData{
 		Package: "render",
@@ -37,32 +38,36 @@ func Test_renderQuery(t *testing.T) {
 		},
 		PrimaryKey: []Column{
 			{
-				Name: "id",
-				Type: "int64",
+				Name:      "id",
+				Type:      "int64",
+				IsNotNull: true,
 			},
 		},
 		UniqueKeys: [][]Column{
 			{
 				{
-					Name: "uid",
-					Type: "int64",
+					Name:      "uid",
+					Type:      "int64",
+					IsNotNull: false,
 				},
 				{
-					Name: "product_name",
-					Type: "string",
+					Name:      "product_name",
+					Type:      "string",
+					IsNotNull: false,
 				},
 			},
 			{
 				{
-					Name: "product_id",
-					Type: "int64",
+					Name:      "product_id",
+					Type:      "int64",
+					IsNotNull: true,
 				},
 			},
 		},
 	}
-	for _, tmpl := range tests {
+	for _, mode := range tests {
 		var buf bytes.Buffer
-		if err := renderQuery(tmpl, &buf, data); err != nil {
+		if err := renderQuery(&buf, data, mode); err != nil {
 			t.Error(err)
 		}
 		t.Log(buf.String())
@@ -87,10 +92,10 @@ func Test_whereQuery(t *testing.T) {
 			want: "",
 		},
 	}
-	for _, tt := range tests {
+	for index, tt := range tests {
 		got := whereQuery(tt.in)
 		if got != tt.want {
-			t.Errorf("in(%s) got(%s) want(%s)", tt.in, got, tt.want)
+			t.Errorf("index(%d) got(%s) want(%s)", index, got, tt.want)
 		}
 	}
 }
@@ -113,10 +118,10 @@ func Test_sqlxPlaceholder(t *testing.T) {
 			want: "",
 		},
 	}
-	for _, tt := range tests {
+	for index, tt := range tests {
 		got := sqlxPlaceholder(tt.in)
 		if got != tt.want {
-			t.Errorf("in(%s) got(%s) want(%s)", tt.in, got, tt.want)
+			t.Errorf("index(%d) got(%s) want(%s)", index, got, tt.want)
 		}
 	}
 }
@@ -139,10 +144,10 @@ func Test_joinColumnsWithQuote(t *testing.T) {
 			want: "",
 		},
 	}
-	for _, tt := range tests {
+	for index, tt := range tests {
 		got := joinColumnsWithQuote(tt.in)
 		if got != tt.want {
-			t.Errorf("in(%s) got(%s) want(%s)", tt.in, got, tt.want)
+			t.Errorf("index(%d) got(%s) want(%s)", index, got, tt.want)
 		}
 	}
 }
@@ -165,10 +170,10 @@ func Test_joinColumnsWithPlace(t *testing.T) {
 			want: "",
 		},
 	}
-	for _, tt := range tests {
+	for index, tt := range tests {
 		got := joinColumnsWithPlace(tt.in)
 		if got != tt.want {
-			t.Errorf("in(%s) got(%s) want(%s)", tt.in, got, tt.want)
+			t.Errorf("index(%d) got(%s) want(%s)", index, got, tt.want)
 		}
 	}
 }

@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"io"
 	"sqlboy/internal/generator"
+	genTmpl "sqlboy/internal/generator/template"
 	"strings"
 	"text/template"
 )
 
 type Column struct {
-	Name string
-	Type string
+	Name      string
+	Type      string
+	IsNotNull bool
 }
 
 type renderData struct {
@@ -19,6 +21,7 @@ type renderData struct {
 	Columns    []Column
 	PrimaryKey []Column
 	UniqueKeys [][]Column
+	ImportSqlx bool
 }
 
 func render(tmpl string, wr io.Writer, data interface{}) error {
@@ -30,7 +33,7 @@ func render(tmpl string, wr io.Writer, data interface{}) error {
 }
 
 // TODO 特殊类型的查询会有问题
-func renderQuery(tmpl string, wr io.Writer, data renderData) error {
+func renderQuery(wr io.Writer, data renderData, mode generator.Mode) error {
 	funcMap := template.FuncMap{
 		"caseExport":      camelCaseExport,
 		"caseInternal":    camelCaseInternal,
@@ -39,12 +42,42 @@ func renderQuery(tmpl string, wr io.Writer, data renderData) error {
 		"addQuote":        addQuote,
 		"whereQuery":      whereQuery,
 		"sqlxPlaceholder": sqlxPlaceholder,
+		"sqlxType":        sqlxType,
+	}
+	var tmpl string
+	switch mode {
+	case generator.ModeGorm:
+		tmpl = genTmpl.QueryGorm
+		data.ImportSqlx = false
+	case generator.ModeSqlx:
+		tmpl = genTmpl.QuerySqlx
+		data.ImportSqlx = importSqlx(data)
+	default:
+		// err ?
+		tmpl = genTmpl.QueryGorm
+		data.ImportSqlx = false
 	}
 	t, err := template.New(tmpl).Funcs(funcMap).Parse(tmpl)
 	if err != nil {
 		return err
 	}
 	return t.Execute(wr, data)
+}
+
+func importSqlx(data renderData) bool {
+	for _, item := range data.PrimaryKey {
+		if !item.IsNotNull {
+			return true
+		}
+	}
+	for _, uk := range data.UniqueKeys {
+		for _, item := range uk {
+			if !item.IsNotNull {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func camelCaseExport(str string) string {
@@ -73,6 +106,13 @@ func sqlxPlaceholder(columns []Column) string {
 		s = append(s, fmt.Sprintf("`%s` = :%s", item.Name, item.Name))
 	}
 	return strings.Join(s, " AND ")
+}
+
+func sqlxType(column Column) string {
+	if column.IsNotNull {
+		return column.Type
+	}
+	return generator.ToSqlNullType(column.Type)
 }
 
 func joinColumnsWithQuote(columns []Column) string {
