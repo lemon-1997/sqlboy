@@ -25,7 +25,7 @@ func Test_renderQuery(t *testing.T) {
 	tests := []generator.Mode{
 		generator.ModeGorm, generator.ModeSqlx,
 	}
-	data := renderData{
+	data := QueryData{
 		Package: "render",
 		Table:   "order_info",
 		Columns: []Column{

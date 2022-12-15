@@ -15,7 +15,7 @@ type Column struct {
 	IsNotNull bool
 }
 
-type renderData struct {
+type QueryData struct {
 	Package    string
 	Table      string
 	Columns    []Column
@@ -33,7 +33,7 @@ func render(tmpl string, wr io.Writer, data interface{}) error {
 }
 
 // TODO 特殊类型的查询会有问题
-func renderQuery(wr io.Writer, data renderData, mode generator.Mode) error {
+func renderQuery(wr io.Writer, data QueryData, mode generator.Mode) error {
 	funcMap := template.FuncMap{
 		"caseExport":      camelCaseExport,
 		"caseInternal":    camelCaseInternal,
@@ -64,7 +64,7 @@ func renderQuery(wr io.Writer, data renderData, mode generator.Mode) error {
 	return t.Execute(wr, data)
 }
 
-func importSqlx(data renderData) bool {
+func importSqlx(data QueryData) bool {
 	for _, item := range data.PrimaryKey {
 		if !item.IsNotNull {
 			return true
