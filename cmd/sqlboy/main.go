@@ -16,6 +16,9 @@ const (
 )
 
 func main() {
+	log.SetFlags(0)
+	log.SetPrefix("sqlboy:")
+
 	if len(os.Args) < 2 {
 		log.Fatal("no specify file")
 	}
@@ -33,12 +36,17 @@ func main() {
 
 	var opts []sqlboy.Option
 	if mode != "" {
-		opts = append(opts, sqlboy.Mode(sqlboy.GenMode(mode)))
+		genMode := sqlboy.GenMode(mode)
+		if genMode != sqlboy.ModeGorm && genMode != sqlboy.ModeSqlx {
+			log.Fatalf("mode %s is not gorm or sqlx", mode)
+		}
+		opts = append(opts, sqlboy.Mode(genMode))
 	}
 	boy := sqlboy.NewBoy(os.Args[1], opts...)
 	err := boy.Do()
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("generate success")
 	os.Exit(0)
 }
