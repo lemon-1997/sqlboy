@@ -1,6 +1,6 @@
 package generator
 
-import parser "sqlboy/antrl"
+import parser "github.com/lemon-1997/sqlboy/antrl"
 
 func ToSqlNullType(goType string) string {
 	switch goType {

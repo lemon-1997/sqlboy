@@ -2,9 +2,9 @@ package parser
 
 import (
 	"errors"
+	antrlParser "github.com/lemon-1997/sqlboy/antrl"
 	"go/parser"
 	"go/token"
-	antrlParser "sqlboy/antrl"
 )
 
 type AstParseIn struct {
@@ -59,7 +59,7 @@ func (*AntrlParser) Parse(in interface{}) (interface{}, error) {
 	}
 	attr, errs := parseStmt(parseIn.Stmt)
 	if len(errs) != 0 {
-		return nil, errors.New("multi error")
+		return nil, errs[0]
 	}
 	return AntrlParseOut{TableAttr: attr}, nil
 }

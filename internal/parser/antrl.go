@@ -2,7 +2,7 @@ package parser
 
 import (
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
-	parser "sqlboy/antrl"
+	parser "github.com/lemon-1997/sqlboy/antrl"
 )
 
 func parseStmt(ddl string) (parser.TableAttr, []error) {

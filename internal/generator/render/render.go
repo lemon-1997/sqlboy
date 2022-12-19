@@ -2,9 +2,9 @@ package render
 
 import (
 	"fmt"
+	"github.com/lemon-1997/sqlboy/internal/generator"
+	genTmpl "github.com/lemon-1997/sqlboy/internal/generator/template"
 	"io"
-	"sqlboy/internal/generator"
-	genTmpl "sqlboy/internal/generator/template"
 	"strings"
 	"text/template"
 )

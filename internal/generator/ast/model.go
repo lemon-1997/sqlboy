@@ -2,10 +2,10 @@ package ast
 
 import (
 	"fmt"
+	parser "github.com/lemon-1997/sqlboy/antrl"
+	"github.com/lemon-1997/sqlboy/internal/generator"
 	"go/ast"
 	"go/token"
-	parser "sqlboy/antrl"
-	"sqlboy/internal/generator"
 	"strings"
 )
 

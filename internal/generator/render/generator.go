@@ -3,8 +3,8 @@ package render
 import (
 	"bytes"
 	"errors"
-	"sqlboy/internal/generator"
-	genTmpl "sqlboy/internal/generator/template"
+	"github.com/lemon-1997/sqlboy/internal/generator"
+	genTmpl "github.com/lemon-1997/sqlboy/internal/generator/template"
 )
 
 type DaoGenIn struct {

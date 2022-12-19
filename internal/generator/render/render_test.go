@@ -2,8 +2,8 @@ package render
 
 import (
 	"bytes"
-	"sqlboy/internal/generator"
-	"sqlboy/internal/generator/template"
+	"github.com/lemon-1997/sqlboy/internal/generator"
+	"github.com/lemon-1997/sqlboy/internal/generator/template"
 	"testing"
 )
 

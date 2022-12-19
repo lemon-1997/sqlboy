@@ -1,4 +1,4 @@
-module sqlboy
+module github.com/lemon-1997/sqlboy
 
 go 1.19
 

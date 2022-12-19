@@ -1,33 +1,35 @@
 package sqlboy
 
 import (
+	"errors"
 	"fmt"
+	parserAntrl "github.com/lemon-1997/sqlboy/antrl"
+	"github.com/lemon-1997/sqlboy/bus"
+	"github.com/lemon-1997/sqlboy/internal"
+	"github.com/lemon-1997/sqlboy/internal/generator"
+	"github.com/lemon-1997/sqlboy/internal/generator/ast"
+	"github.com/lemon-1997/sqlboy/internal/generator/render"
+	"github.com/lemon-1997/sqlboy/internal/parser"
 	"go/format"
 	"os"
-	parserAntrl "sqlboy/antrl"
-	"sqlboy/bus"
-	"sqlboy/internal"
-	"sqlboy/internal/generator"
-	"sqlboy/internal/generator/ast"
-	"sqlboy/internal/generator/render"
-	"sqlboy/internal/parser"
+	"path/filepath"
 )
 
 type GenMode string
 
 const (
 	ModeGorm GenMode = "gorm"
-	ModeSqlx GenMode = "sqlx"
+	ModeSqlx         = "sqlx"
 )
 
 const (
 	TopicAstParse       bus.Topic = "topicAstParse"
-	TopicAntrlParse     bus.Topic = "topicAntrlParse"
-	TopicAssertGenerate bus.Topic = "topicAssertGenerate"
-	TopicModelGenerate  bus.Topic = "topicModelGenerate"
-	TopicDaoGenerate    bus.Topic = "topicDaoGenerate"
-	TopicTxGenerate     bus.Topic = "topicTxGenerate"
-	TopicQueryGenerate  bus.Topic = "topicQueryGenerate"
+	TopicAntrlParse               = "topicAntrlParse"
+	TopicAssertGenerate           = "topicAssertGenerate"
+	TopicModelGenerate            = "topicModelGenerate"
+	TopicDaoGenerate              = "topicDaoGenerate"
+	TopicTxGenerate               = "topicTxGenerate"
+	TopicQueryGenerate            = "topicQueryGenerate"
 )
 
 type Option func(*Boy)
@@ -39,10 +41,8 @@ func Mode(mode GenMode) Option {
 }
 
 type Boy struct {
-	file string
-	mode GenMode
-
-	genDir     string
+	file       string
+	mode       GenMode
 	genPackage string
 
 	bus  *bus.AsyncEventBus
@@ -52,11 +52,9 @@ type Boy struct {
 }
 
 func NewBoy(filePath string, opts ...Option) *Boy {
-	// todo 获取文件夹 判断文件路径是否正确
 	boy := &Boy{
-		file:   filePath,
-		mode:   ModeGorm,
-		genDir: "./testGorm",
+		file: filePath,
+		mode: ModeGorm,
 
 		err:  make(chan error),
 		done: make(chan struct{}),
@@ -81,7 +79,7 @@ func (b *Boy) register() {
 	b.bus = eventBus
 }
 
-func (b *Boy) Do() {
+func (b *Boy) Do() error {
 	b.bus.Publish(TopicAstParse)
 	var genTables, genCount int
 	tables := make(map[string][]parserAntrl.ColumnDecl)
@@ -98,7 +96,7 @@ func (b *Boy) Do() {
 				b.bus.Publish(TopicAssertGenerate, res.Stmt)
 				for _, stmt := range res.Stmt {
 					if len(stmt) <= 2 {
-						return
+						return errors.New("nothing find")
 					}
 					b.bus.Publish(TopicAntrlParse, stmt[1:len(stmt)-1])
 				}
@@ -114,10 +112,10 @@ func (b *Boy) Do() {
 			genCount++
 			// assert,model,dao,tx is 4 file
 			if genCount >= genTables+4 {
-				return
+				return nil
 			}
 		case err := <-b.err:
-			panic(err)
+			return err
 		default:
 			continue
 		}
@@ -136,7 +134,7 @@ func (b *Boy) eventAssertGenerate(asserts map[string]string) {
 	b.generate(&ast.AssertGenerator{}, ast.AssertGenIn{
 		PackageName: b.genPackage,
 		Asserts:     asserts,
-	}, b.genDir+"/assert.go")
+	}, "assert.go")
 }
 
 func (b *Boy) eventModelGenerate(tables map[string][]parserAntrl.ColumnDecl) {
@@ -144,34 +142,34 @@ func (b *Boy) eventModelGenerate(tables map[string][]parserAntrl.ColumnDecl) {
 		PackageName: b.genPackage,
 		Tables:      tables,
 		Mode:        b.genMode(),
-	}, b.genDir+"/model.go")
+	}, "model.go")
 }
 
 func (b *Boy) eventDaoGenerate() {
 	b.generate(&render.DaoGenerator{}, render.DaoGenIn{
 		PackageName: b.genPackage,
 		Mode:        b.genMode(),
-	}, b.genDir+"/dao.go")
+	}, "dao.go")
 }
 
 func (b *Boy) eventTxGenerate() {
 	b.generate(&render.TxGenerator{}, render.TxGenIn{
 		PackageName: b.genPackage,
 		Mode:        b.genMode(),
-	}, b.genDir+"/transaction.go")
+	}, "transaction.go")
 }
 
 func (b *Boy) eventQueryGenerate(data render.QueryData) {
 	b.generate(&render.QueryGenerator{}, render.QueryGenIn{
 		Data: data,
 		Mode: b.genMode(),
-	}, b.genDir+fmt.Sprintf("/%s_query.go", data.Table))
+	}, fmt.Sprintf("query_%s.go", data.Table))
 }
 
 func (b *Boy) parse(parser internal.Parser, in interface{}) {
 	res, err := parser.Parse(in)
 	if err != nil {
-		b.err <- err
+		b.err <- fmt.Errorf("%s:%w", parser.Name(), err)
 		return
 	}
 	b.data <- res
@@ -180,16 +178,16 @@ func (b *Boy) parse(parser internal.Parser, in interface{}) {
 func (b *Boy) generate(gen internal.Generator, in interface{}, file string) {
 	buf, err := gen.Generate(in)
 	if err != nil {
-		b.err <- err
+		b.err <- fmt.Errorf("%s:%w", gen.Name(), err)
 		return
 	}
 	source, err := format.Source(buf.Bytes())
 	if err != nil {
-		b.err <- err
+		b.err <- fmt.Errorf("%s:%w", gen.Name(), err)
 		return
 	}
-	if err = os.WriteFile(file, source, 0664); err != nil {
-		b.err <- err
+	if err = os.WriteFile(b.genPath(file), source, 0664); err != nil {
+		b.err <- fmt.Errorf("%s:%w", gen.Name(), err)
 		return
 	}
 	b.done <- struct{}{}
@@ -243,4 +241,8 @@ func (b *Boy) genMode() generator.Mode {
 	default:
 		return generator.ModeGorm
 	}
+}
+
+func (b *Boy) genPath(name string) string {
+	return filepath.Join(filepath.Dir(b.file), name)
 }

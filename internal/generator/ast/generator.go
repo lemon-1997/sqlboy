@@ -3,10 +3,10 @@ package ast
 import (
 	"bytes"
 	"errors"
+	parser "github.com/lemon-1997/sqlboy/antrl"
+	"github.com/lemon-1997/sqlboy/internal/generator"
 	"go/format"
 	"go/token"
-	parser "sqlboy/antrl"
-	"sqlboy/internal/generator"
 )
 
 type AssertGenIn struct {
