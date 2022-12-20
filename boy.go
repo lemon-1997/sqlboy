@@ -1,11 +1,10 @@
 package sqlboy
 
 import (
-	"errors"
 	"fmt"
 	parserAntrl "github.com/lemon-1997/sqlboy/antrl"
 	"github.com/lemon-1997/sqlboy/bus"
-	"github.com/lemon-1997/sqlboy/internal"
+	"github.com/lemon-1997/sqlboy/inter"
 	"github.com/lemon-1997/sqlboy/internal/generator"
 	"github.com/lemon-1997/sqlboy/internal/generator/ast"
 	"github.com/lemon-1997/sqlboy/internal/generator/render"
@@ -13,6 +12,7 @@ import (
 	"go/format"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 type GenMode string
@@ -95,10 +95,11 @@ func (b *Boy) Do() error {
 				b.bus.Publish(TopicTxGenerate)
 				b.bus.Publish(TopicAssertGenerate, res.Stmt)
 				for _, stmt := range res.Stmt {
-					if len(stmt) <= 2 {
-						return errors.New("nothing find")
+					s, err := strconv.Unquote(stmt)
+					if err != nil {
+						return err
 					}
-					b.bus.Publish(TopicAntrlParse, stmt[1:len(stmt)-1])
+					b.bus.Publish(TopicAntrlParse, s)
 				}
 			case parser.AntrlParseOut:
 				res := data.(parser.AntrlParseOut)
@@ -166,7 +167,7 @@ func (b *Boy) eventQueryGenerate(data render.QueryData) {
 	}, fmt.Sprintf("query_%s.go", data.Table))
 }
 
-func (b *Boy) parse(parser internal.Parser, in interface{}) {
+func (b *Boy) parse(parser inter.Parser, in interface{}) {
 	res, err := parser.Parse(in)
 	if err != nil {
 		b.err <- fmt.Errorf("%s:%w", parser.Name(), err)
@@ -175,7 +176,7 @@ func (b *Boy) parse(parser internal.Parser, in interface{}) {
 	b.data <- res
 }
 
-func (b *Boy) generate(gen internal.Generator, in interface{}, file string) {
+func (b *Boy) generate(gen inter.Generator, in interface{}, file string) {
 	buf, err := gen.Generate(in)
 	if err != nil {
 		b.err <- fmt.Errorf("%s:%w", gen.Name(), err)
@@ -214,8 +215,9 @@ func (b *Boy) transRenderData(res parser.AntrlParseOut) render.QueryData {
 
 	var uk [][]render.Column
 	for _, item := range res.UniqueKeys {
+		uk = append(uk, []render.Column{})
 		for _, column := range item.Columns {
-			pk = append(pk, render.Column{
+			uk[len(uk)-1] = append(uk[len(uk)-1], render.Column{
 				Name:      column.Name,
 				Type:      string(column.GoType),
 				IsNotNull: column.IsNotNull,
