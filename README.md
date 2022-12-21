@@ -3,7 +3,7 @@ a generate SQL curd code tool
 
 ## Examples
 
-https://github.com/lemon-1997/sqlboy/examples
+https://github.com/lemon-1997/sqlboy/tree/main/examples
 
 ## Installation
 
@@ -13,7 +13,7 @@ go install github.com/lemon-1997/sqlboy/cmd/sqlboy@latest
 
 ## Get started
 
-1. Create a new file and add your table statement:
+1. create a new file and add your table statement:
 
     ```go
     const (
