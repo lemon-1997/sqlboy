@@ -1,5 +1,6 @@
 # sqlboy
 a generate SQL curd code tool
+![image](img/sqlboy.png)
 
 ## Examples
 
@@ -42,7 +43,7 @@ go install github.com/lemon-1997/sqlboy/cmd/sqlboy@latest
     'updated_at' timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY ('id'),
     UNIQUE KEY 'uk_product' ('product_id', 'sku_id')
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单表';
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品表';
     `
     )
     ```
