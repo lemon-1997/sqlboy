@@ -1,6 +1,6 @@
 # sqlboy
 a generate SQL curd code tool
-![image](img/sqlboy.png)
+![image](img/sqlboy.PNG)
 
 ## Examples
 
