@@ -57,3 +57,6 @@ Note: it must be const for compile-time assertion
     ```
 
 Note: mode can be gorm or sqlx
+
+## Blog post
+If you want to learn more details about my motivation to write this and follow my steps in doing so, check out [my blog post](https://lemon-1997.pages.dev/post/project-sqlboy#more/) on the topic.
