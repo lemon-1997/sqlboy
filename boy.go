@@ -2,7 +2,7 @@ package sqlboy
 
 import (
 	"fmt"
-	parserAntrl "github.com/lemon-1997/sqlboy/antrl"
+	parserAntlr "github.com/lemon-1997/sqlboy/antlr"
 	"github.com/lemon-1997/sqlboy/bus"
 	"github.com/lemon-1997/sqlboy/inter"
 	"github.com/lemon-1997/sqlboy/internal/generator"
@@ -24,7 +24,7 @@ const (
 
 const (
 	TopicAstParse       bus.Topic = "topicAstParse"
-	TopicAntrlParse               = "topicAntrlParse"
+	TopicAntlrParse               = "topicAntlrParse"
 	TopicAssertGenerate           = "topicAssertGenerate"
 	TopicModelGenerate            = "topicModelGenerate"
 	TopicDaoGenerate              = "topicDaoGenerate"
@@ -70,7 +70,7 @@ func NewBoy(filePath string, opts ...Option) *Boy {
 func (b *Boy) register() {
 	eventBus := bus.NewAsyncEventBus()
 	_ = eventBus.Subscribe(TopicAstParse, b.eventAstParse)
-	_ = eventBus.Subscribe(TopicAntrlParse, b.eventAntrlParse)
+	_ = eventBus.Subscribe(TopicAntlrParse, b.eventAntlrParse)
 	_ = eventBus.Subscribe(TopicAssertGenerate, b.eventAssertGenerate)
 	_ = eventBus.Subscribe(TopicModelGenerate, b.eventModelGenerate)
 	_ = eventBus.Subscribe(TopicDaoGenerate, b.eventDaoGenerate)
@@ -82,7 +82,7 @@ func (b *Boy) register() {
 func (b *Boy) Do() error {
 	b.bus.Publish(TopicAstParse)
 	var genTables, genCount int
-	tables := make(map[string][]parserAntrl.ColumnDecl)
+	tables := make(map[string][]parserAntlr.ColumnDecl)
 	for {
 		select {
 		case data := <-b.data:
@@ -99,10 +99,10 @@ func (b *Boy) Do() error {
 					if err != nil {
 						return err
 					}
-					b.bus.Publish(TopicAntrlParse, s)
+					b.bus.Publish(TopicAntlrParse, s)
 				}
-			case parser.AntrlParseOut:
-				res := data.(parser.AntrlParseOut)
+			case parser.AntlrParseOut:
+				res := data.(parser.AntlrParseOut)
 				tables[res.TableName] = res.Columns
 				b.bus.Publish(TopicQueryGenerate, b.transRenderData(res))
 				if len(tables) == genTables {
@@ -127,8 +127,8 @@ func (b *Boy) eventAstParse() {
 	b.parse(&parser.AstParser{}, parser.AstParseIn{Path: b.file})
 }
 
-func (b *Boy) eventAntrlParse(stmt string) {
-	b.parse(&parser.AntrlParser{}, parser.AntrlParseIn{Stmt: stmt})
+func (b *Boy) eventAntlrParse(stmt string) {
+	b.parse(&parser.AntlrParser{}, parser.AntlrParseIn{Stmt: stmt})
 }
 
 func (b *Boy) eventAssertGenerate(asserts map[string]string) {
@@ -138,7 +138,7 @@ func (b *Boy) eventAssertGenerate(asserts map[string]string) {
 	}, "assert.go")
 }
 
-func (b *Boy) eventModelGenerate(tables map[string][]parserAntrl.ColumnDecl) {
+func (b *Boy) eventModelGenerate(tables map[string][]parserAntlr.ColumnDecl) {
 	b.generate(&ast.ModelGenerator{}, ast.ModelGenIn{
 		PackageName: b.genPackage,
 		Tables:      tables,
@@ -194,7 +194,7 @@ func (b *Boy) generate(gen inter.Generator, in interface{}, file string) {
 	b.done <- struct{}{}
 }
 
-func (b *Boy) transRenderData(res parser.AntrlParseOut) render.QueryData {
+func (b *Boy) transRenderData(res parser.AntlrParseOut) render.QueryData {
 	var columns []render.Column
 	for _, item := range res.Columns {
 		columns = append(columns, render.Column{

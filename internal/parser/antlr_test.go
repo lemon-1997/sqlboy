@@ -1,7 +1,7 @@
 package parser
 
 import (
-	parser "github.com/lemon-1997/sqlboy/antrl"
+	parser "github.com/lemon-1997/sqlboy/antlr"
 	"testing"
 )
 

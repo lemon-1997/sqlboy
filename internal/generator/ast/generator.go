@@ -3,7 +3,7 @@ package ast
 import (
 	"bytes"
 	"errors"
-	parser "github.com/lemon-1997/sqlboy/antrl"
+	parser "github.com/lemon-1997/sqlboy/antlr"
 	"github.com/lemon-1997/sqlboy/internal/generator"
 	"go/format"
 	"go/token"

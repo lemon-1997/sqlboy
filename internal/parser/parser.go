@@ -2,7 +2,7 @@ package parser
 
 import (
 	"errors"
-	antrlParser "github.com/lemon-1997/sqlboy/antrl"
+	antlrParser "github.com/lemon-1997/sqlboy/antlr"
 	"go/parser"
 	"go/token"
 )
@@ -38,22 +38,22 @@ func (*AstParser) Parse(in interface{}) (interface{}, error) {
 	}, nil
 }
 
-type AntrlParseIn struct {
+type AntlrParseIn struct {
 	Stmt string
 }
 
-type AntrlParseOut struct {
-	antrlParser.TableAttr
+type AntlrParseOut struct {
+	antlrParser.TableAttr
 }
 
-type AntrlParser struct{}
+type AntlrParser struct{}
 
-func (*AntrlParser) Name() string {
-	return "AntrlParser"
+func (*AntlrParser) Name() string {
+	return "AntlrParser"
 }
 
-func (*AntrlParser) Parse(in interface{}) (interface{}, error) {
-	parseIn, ok := in.(AntrlParseIn)
+func (*AntlrParser) Parse(in interface{}) (interface{}, error) {
+	parseIn, ok := in.(AntlrParseIn)
 	if !ok {
 		return nil, errors.New("parse in type error")
 	}
@@ -61,5 +61,5 @@ func (*AntrlParser) Parse(in interface{}) (interface{}, error) {
 	if len(errs) != 0 {
 		return nil, errs[0]
 	}
-	return AntrlParseOut{TableAttr: attr}, nil
+	return AntlrParseOut{TableAttr: attr}, nil
 }
