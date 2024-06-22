@@ -1,6 +1,8 @@
 package parser
 
-import "github.com/antlr/antlr4/runtime/Go/antlr/v4"
+import (
+	"github.com/antlr4-go/antlr/v4"
+)
 
 type ColumnDecl struct {
 	Decl      string

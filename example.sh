@@ -1,3 +1,3 @@
 go build ./cmd/sqlboy/main.go
-./main.exe ./examples/gorm/stmt.go -mode gorm
-./main.exe ./examples/sqlx/stmt.go -mode sqlx
+./main ./examples/gorm/stmt.go -mode gorm
+./main ./examples/sqlx/stmt.go -mode sqlx

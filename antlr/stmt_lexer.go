@@ -1,13 +1,12 @@
-// Code generated from java-escape by ANTLR 4.11.1. DO NOT EDIT.
+// Code generated from ./antlr/StmtLexer.g4 by ANTLR 4.13.1. DO NOT EDIT.
 
 package parser
 
 import (
 	"fmt"
+	"github.com/antlr4-go/antlr/v4"
 	"sync"
 	"unicode"
-
-	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 )
 
 // Suppress unused import error
@@ -22,28 +21,28 @@ type StmtLexer struct {
 	// TODO: EOF string
 }
 
-var stmtlexerLexerStaticData struct {
+var StmtLexerLexerStaticData struct {
 	once                   sync.Once
 	serializedATN          []int32
-	channelNames           []string
-	modeNames              []string
-	literalNames           []string
-	symbolicNames          []string
-	ruleNames              []string
-	predictionContextCache *antlr.PredictionContextCache
+	ChannelNames           []string
+	ModeNames              []string
+	LiteralNames           []string
+	SymbolicNames          []string
+	RuleNames              []string
+	PredictionContextCache *antlr.PredictionContextCache
 	atn                    *antlr.ATN
 	decisionToDFA          []*antlr.DFA
 }
 
 func stmtlexerLexerInit() {
-	staticData := &stmtlexerLexerStaticData
-	staticData.channelNames = []string{
+	staticData := &StmtLexerLexerStaticData
+	staticData.ChannelNames = []string{
 		"DEFAULT_TOKEN_CHANNEL", "HIDDEN", "MYSQLCOMMENT", "ERRORCHANNEL",
 	}
-	staticData.modeNames = []string{
+	staticData.ModeNames = []string{
 		"DEFAULT_MODE",
 	}
-	staticData.literalNames = []string{
+	staticData.LiteralNames = []string{
 		"", "", "", "", "", "'ADD'", "'ALL'", "'ALTER'", "'ALWAYS'", "'ANALYZE'",
 		"'AND'", "'ARRAY'", "'AS'", "'ASC'", "'BEFORE'", "'BETWEEN'", "'BOTH'",
 		"'BUCKETS'", "'BY'", "'CALL'", "'CASCADE'", "'CASE'", "'CAST'", "'CHANGE'",
@@ -263,7 +262,7 @@ func stmtlexerLexerInit() {
 		"'~'", "'|'", "'&'", "'^'", "'.'", "'('", "')'", "','", "';'", "'@'",
 		"'0'", "'1'", "'2'", "'''", "'\"'", "'`'", "':'",
 	}
-	staticData.symbolicNames = []string{
+	staticData.SymbolicNames = []string{
 		"", "SPACE", "SPEC_MYSQL_COMMENT", "COMMENT_INPUT", "LINE_COMMENT",
 		"ADD", "ALL", "ALTER", "ALWAYS", "ANALYZE", "AND", "ARRAY", "AS", "ASC",
 		"BEFORE", "BETWEEN", "BOTH", "BUCKETS", "BY", "CALL", "CASCADE", "CASE",
@@ -465,7 +464,7 @@ func stmtlexerLexerInit() {
 		"STRING_USER_NAME", "IP_ADDRESS", "STRING_USER_NAME_MARIADB", "LOCAL_ID",
 		"GLOBAL_ID", "ERROR_RECONGNIGION",
 	}
-	staticData.ruleNames = []string{
+	staticData.RuleNames = []string{
 		"SPACE", "SPEC_MYSQL_COMMENT", "COMMENT_INPUT", "LINE_COMMENT", "ADD",
 		"ALL", "ALTER", "ALWAYS", "ANALYZE", "AND", "ARRAY", "AS", "ASC", "BEFORE",
 		"BETWEEN", "BOTH", "BUCKETS", "BY", "CALL", "CASCADE", "CASE", "CAST",
@@ -669,7 +668,7 @@ func stmtlexerLexerInit() {
 		"SQUOTA_STRING", "BQUOTA_STRING", "HEX_DIGIT", "DEC_DIGIT", "BIT_STRING_L",
 		"ERROR_RECONGNIGION",
 	}
-	staticData.predictionContextCache = antlr.NewPredictionContextCache()
+	staticData.PredictionContextCache = antlr.NewPredictionContextCache()
 	staticData.serializedATN = []int32{
 		4, 0, 1153, 13540, 6, -1, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7,
 		3, 2, 4, 7, 4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7,
@@ -6993,7 +6992,7 @@ func stmtlexerLexerInit() {
 // NewStmtLexer(). You can call this function if you wish to initialize the static state ahead
 // of time.
 func StmtLexerInit() {
-	staticData := &stmtlexerLexerStaticData
+	staticData := &StmtLexerLexerStaticData
 	staticData.once.Do(stmtlexerLexerInit)
 }
 
@@ -7002,13 +7001,13 @@ func NewStmtLexer(input antlr.CharStream) *StmtLexer {
 	StmtLexerInit()
 	l := new(StmtLexer)
 	l.BaseLexer = antlr.NewBaseLexer(input)
-	staticData := &stmtlexerLexerStaticData
-	l.Interpreter = antlr.NewLexerATNSimulator(l, staticData.atn, staticData.decisionToDFA, staticData.predictionContextCache)
-	l.channelNames = staticData.channelNames
-	l.modeNames = staticData.modeNames
-	l.RuleNames = staticData.ruleNames
-	l.LiteralNames = staticData.literalNames
-	l.SymbolicNames = staticData.symbolicNames
+	staticData := &StmtLexerLexerStaticData
+	l.Interpreter = antlr.NewLexerATNSimulator(l, staticData.atn, staticData.decisionToDFA, staticData.PredictionContextCache)
+	l.channelNames = staticData.ChannelNames
+	l.modeNames = staticData.ModeNames
+	l.RuleNames = staticData.RuleNames
+	l.LiteralNames = staticData.LiteralNames
+	l.SymbolicNames = staticData.SymbolicNames
 	l.GrammarFileName = "StmtLexer.g4"
 	// TODO: l.EOF = antlr.TokenEOF
 

@@ -1,8 +1,8 @@
-// Code generated from java-escape by ANTLR 4.11.1. DO NOT EDIT.
+// Code generated from ./antlr/StmtParser.g4 by ANTLR 4.13.1. DO NOT EDIT.
 
 package parser // StmtParser
 
-import "github.com/antlr/antlr4/runtime/Go/antlr/v4"
+import "github.com/antlr4-go/antlr/v4"
 
 // StmtParserListener is a complete listener for a parse tree produced by StmtParser.
 type StmtParserListener interface {

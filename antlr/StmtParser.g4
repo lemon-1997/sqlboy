@@ -437,6 +437,7 @@ defaultValue
     | (LASTVAL | NEXTVAL) '(' fullId ')' // MariaDB
     | '(' (PREVIOUS | NEXT) VALUE FOR fullId ')' // MariaDB
     | expression // MariaDB
+    | '('JSON_OBJECT'('')'')'
     ;
 
 currentTimestamp
